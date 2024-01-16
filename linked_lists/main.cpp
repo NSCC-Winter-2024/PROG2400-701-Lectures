@@ -10,6 +10,16 @@ class LinkedList {
     size_t _size{0};
 
 public:
+    virtual ~LinkedList() {
+        auto node = _start;
+
+        while (node != nullptr) {
+            auto temp = node;
+            node = node->_next;
+            delete temp;
+        }
+    }
+
     [[nodiscard]] size_t size() const { return _size; }
 
     void add(int data) {
