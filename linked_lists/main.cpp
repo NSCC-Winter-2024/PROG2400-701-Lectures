@@ -1,52 +1,62 @@
 #include <iostream>
+#include <memory>
 
 class LinkedList {
     struct LinkedListNode {
         int _data{-1};
-        LinkedListNode *_next{nullptr};
+        std::unique_ptr<LinkedListNode> _next{nullptr};
     };
 
-    LinkedListNode *_start{nullptr};
+    std::unique_ptr<LinkedListNode> _start{nullptr};
     size_t _size{0};
 
 public:
-    virtual ~LinkedList() {
-        auto node = _start;
 
-        while (node != nullptr) {
-            auto temp = node;
-            node = node->_next;
-            delete temp;
+    class iterator {
+        LinkedListNode* _node {nullptr};
+    public:
+        explicit iterator(LinkedListNode* node = nullptr) : _node (node) {}
+        int operator*() const { return _node->_data; }
+        bool operator!=(iterator it) const { return this->_node != it._node; }
+
+        iterator& operator++() {
+            _node = _node->_next.get();
+            return *this;
         }
-    }
+
+    };
+
+    iterator begin() { return iterator(_start.get()); }
+
+    iterator end() { return iterator(nullptr); }
 
     [[nodiscard]] size_t size() const { return _size; }
 
     void add(int data) {
         // create a new node for the chain
-        auto new_node = new LinkedListNode();
+        auto new_node = std::make_unique<LinkedListNode>();
         new_node->_data = data;
 
         // is this the first node in the chain?
         if (_start == nullptr) {
             // it is the first!
             // link it to the start pointer
-            _start = new_node;
+            _start = std::move(new_node);
         } else {
             // not the first.
 
             // look for the end of the chain
-            auto node = _start;
+            auto node = _start.get();
             auto prev = (LinkedListNode *) nullptr;
 
             while (node != nullptr) {
                 prev = node;
-                node = node->_next;
+                node = node->_next.get();
             }
 
             // attach new node to the end of the chain
             if (prev != nullptr) {
-                prev->_next = new_node;
+                prev->_next = std::move(new_node);
             }
         }
         // increase the number of total nodes
@@ -64,27 +74,27 @@ public:
         if (index == _size) return add(data);
 
         // create the new node
-        auto node = new LinkedListNode();
+        auto node = std::make_unique<LinkedListNode>();
         node->_data = data;
 
         // find the position to insert the node
-        auto curr = _start;
+        auto curr = _start.get();
         auto prev = (LinkedListNode *) nullptr;
 
         for (auto i = 0; curr != nullptr && i < index; ++i) {
             prev = curr;
-            curr = curr->_next;
+            curr = curr->_next.get();
         }
 
         // insert the node
         if (prev == nullptr) {
             // inserting at the start of the chain
-            node->_next = _start;
-            _start = node;
+            node->_next = std::move(_start);
+            _start = std::move(node);
         } else {
             // inserting somewhere else in the chain
-            node->_next = prev->_next;
-            prev->_next = node;
+            node->_next = std::move(prev->_next);
+            prev->_next = std::move(node);
         }
         // increase the total number of nodes
         _size++;
@@ -94,13 +104,13 @@ public:
     /// \param data delete the node with data as its value
     void remove(int data) {
 
-        auto node = _start;
+        auto node = _start.get();
         auto prev = (LinkedListNode *) nullptr;
 
         // find the node to delete
         while (node != nullptr && node->_data != data) {
             prev = node;
-            node = node->_next;
+            node = node->_next.get();
         }
 
         // did I find the node to delete?
@@ -110,13 +120,12 @@ public:
             // am I deleting the first node?
             if (prev == nullptr) {
                 // yes I am!
-                _start = node->_next;
+                _start = std::move(node->_next);
             } else {
                 // nope. it's a node in the middle
-                prev->_next = node->_next;
+                prev->_next = std::move(node->_next);
             }
 
-            delete node;
             _size--;
         }
     }
@@ -125,11 +134,11 @@ public:
 };
 
 std::ostream &operator<<(std::ostream &output, LinkedList &list) {
-    auto node = list._start;
+    auto node = list._start.get();
 
     while (node != nullptr) {
         std::cout << node->_data << " ";
-        node = node->_next;
+        node = node->_next.get();
     }
     return output;
 }
@@ -190,6 +199,17 @@ int main() {
     std::cout << "Test 7 - delete end node" << std::endl;
     std::cout << "------------------------" << std::endl;
     std::cout << list << std::endl;
+
+    // test 8 - using an iterator
+    for (auto n: list) {
+        std::cout << n << ' ';
+    }
+    std::cout << std::endl;
+
+    for (auto it = list.begin(); it != list.end() ; ++it) {
+        std::cout << *it << ' ';
+    }
+    std::cout << std::endl;
 
     return 0;
 }
