@@ -1,7 +1,19 @@
 #include <iostream>
 
+struct Data {
+    int _age {0};
+    std::string _name;
+    std::string _id;
+};
+std::ostream& operator<<(std::ostream& output, const Data& data) {
+    output << "Name: " << data._name << ", ";
+    output << "ID: " << data._id << ", ";
+    output << "Age: " << data._age;
+    return output;
+}
+
 struct Node {
-    int _data {-1};
+    Data _data;
     Node* _next {nullptr};
 };
 
@@ -10,8 +22,8 @@ class Queue final {
     Node* _back {nullptr};
     size_t _size {0};
 public:
-    void push_back(int num) {
-        auto node = new Node({num});
+    void push_back(Data data) {
+        auto node = new Node(data);
 
         // are we adding to an empty queue?
         if (_front == nullptr) {
@@ -26,8 +38,8 @@ public:
         _size++;
     }
 
-    [[nodiscard]] int peek() const {
-        return _front != nullptr ? _front->_data : -1;
+    [[nodiscard]] Data peek() const {
+        return _front != nullptr ? _front->_data : Data({-1, "Invalid Name", "Invalid ID"});
     }
 
     [[nodiscard]] size_t size() const {
@@ -71,11 +83,11 @@ int main() {
     std::cout << "Test 1: Pushing Nodes" << std::endl;
     std::cout << "---------------------" << std::endl;
 
-    queue.push_back(1);
-    queue.push_back(2);
-    queue.push_back(3);
-    queue.push_back(4);
-    queue.push_back(5);
+    queue.push_back({20, "John", "W111111"});
+    queue.push_back({25, "Jane", "W222222"});
+    queue.push_back({27, "Jill", "W333333"});
+    queue.push_back({18, "Jack", "W444444"});
+    queue.push_back({19, "Mark", "W555555"});
 
     std::cout << queue << std::endl;
 
