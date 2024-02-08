@@ -20,12 +20,12 @@ public:
         // re-allocate some memory to account for new element, if needed
         auto temp = _nums;
         if (_capacity == _size) {
-            _nums = new int[_capacity * 2];
+          _nums = new int[_capacity * 2];
         }
 
         // copy old array elements into new memory block
         for (int i = 0; i < _size; ++i) {
-            _nums[i] = temp[i];
+          _nums[i] = temp[i];
         }
 
         // add the new element to the end of the new memory block

@@ -4,7 +4,7 @@
 #include <iostream>
 
 class EchoApplication {
-    static const std::string END_VALUE;
+    static constexpr std::string END_VALUE {"end"};
     std::istream& _cin;
     std::ostream& _cout;
     std::string _input;

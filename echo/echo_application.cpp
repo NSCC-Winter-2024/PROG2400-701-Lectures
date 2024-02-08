@@ -1,8 +1,6 @@
 #include <iostream>
 #include "echo_application.h"
 
-const std::string EchoApplication::END_VALUE = "end";
-
 EchoApplication::EchoApplication(std::istream &in, std::ostream &out) : _cin(in), _cout(out) {}
 
 void EchoApplication::input() {
