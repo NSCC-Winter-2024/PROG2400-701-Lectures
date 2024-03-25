@@ -4,6 +4,8 @@
 #include <chrono>
 #include <numeric>
 #include <random>
+#include <queue>
+#include "sorting.h"
 
 using clk = std::chrono::high_resolution_clock;
 
@@ -14,14 +16,12 @@ void track_time(auto desc, void(*f)(std::span<int>), std::span<int> nums) {
     std::cout << std::setw(15) << desc << ": ";
     std::cout << "time = " << span.count() << "s" << std::endl;
 }
-
 void dump_array(std::span<int> array) {
     for (int i : array) {
         std::cout << std::setw(3) << i;
     }
     std::cout << std::endl;
 }
-
 std::string join(const std::span<int> nums, auto ch) {
     return std::accumulate(
         std::next(nums.begin()),
@@ -31,7 +31,6 @@ std::string join(const std::span<int> nums, auto ch) {
             return std::move(s) + ch + std::to_string(n);
         });
 }
-
 void fill_array(std::span<int> nums) {
     std::random_device rnd;
     std::default_random_engine eng(rnd());
@@ -41,63 +40,143 @@ void fill_array(std::span<int> nums) {
     });
 }
 
-void bubble_sort(std::span<int> array) {
-    for (int i = 0; i < array.size() - 2; ++i) {
-        for (int j = 0; j < array.size() - 1 - i; ++j) {
-            // compare adjacent numbers
-            if (array[j+1] < array[j]) {
-                // swap the numbers
-                std::swap(array[j], array[j+1]);
+std::ostream &operator<<(std::ostream &output, std::queue<int> queue) {
+    if (queue.empty()) return output;
+    while (queue.size() > 1) {
+        auto num = queue.front();
+        queue.pop();
+        output << num << ",";
+    }
+    output << queue.front();
+    return output;
+}
+
+void split(std::queue<int> &in, std::queue<int> &out1, std::queue<int> &out2) {
+    auto num_subfiles = 0;
+
+    auto prev = -1;
+    while (!in.empty()) {
+        // read in record
+        auto curr = in.front();
+        in.pop();
+
+        // new subfile?
+        if (curr < prev) num_subfiles++;
+
+        // write odds and evens
+        if (num_subfiles % 2 == 0) {
+            out1.push(curr);
+        } else {
+            out2.push(curr);
+        }
+
+        prev = curr;
+    }
+}
+
+bool elements_in_sublist(auto first, auto second, auto last) {
+    return !first.empty() && (first.front() >= last);
+}
+
+bool elements_in_column(auto first, auto second, auto last) {
+    return !first.empty() && (first.front() >= last) &&
+        (second.empty() || (second.front() < last) || (first.front() < second.front()));
+}
+
+bool elements_not_in_current_list(auto first, auto second, auto last) {
+    return first.empty() || !second.empty() &&
+        ((first.front() < last) ||
+            ((first.front() >= last) && (second.front() < first.front())));
+}
+
+auto merge(std::queue<int> &out, std::queue<int> &in1, std::queue<int> &in2) {
+    auto num_subfiles = 0;
+
+    // who starts the process?
+    auto &first = in2.empty() || (in1.front() < in2.front()) ? in1 : in2;
+    auto &second = first == in1 ? in2 : in1;
+
+    // keep merging while there are records left in either file
+    while (!in1.empty() || !in2.empty()) {
+
+        auto last = -1;
+        while (elements_in_sublist(first, second, last)) {
+
+            // continue reading from current while part of the same sublist
+            do {
+                last = first.front();
+                first.pop();
+                out.push(last);
+            } while (elements_in_column(first, second, last));
+
+            // should I switch to other file??
+            if (elements_not_in_current_list(first, second, last)) {
+                std::swap(first, second);
             }
         }
+
+        num_subfiles++;
     }
+
+    return num_subfiles;
 }
 
-void selection_sort(std::span<int> array) {
-    for (auto i = array.begin(); i < array.end(); ++i) {
-        // find the smallest number
-        auto min = std::min_element(i, array.end());
-
-        // swap the lowest
-        if (*min < *i) {
-            std::swap(*min, *i);
-        }
+void merge_sort(std::span<int> array) {
+    // copy array into a queue (the queue simulates a file)
+    std::queue<int> merged;
+    for (auto num : array) {
+        merged.push(num);
     }
-}
 
-void insertion_sort(std::span<int> array) {
-    for (int i = 1; i < array.size(); ++i) {
-        // take the current value
-        auto temp = array[i];
+    // merge sort
+    std::queue<int> split1, split2;
+    auto subfiles = 0;
+    do {
+        // split
+        split(merged, split1, split2);
 
-        // shuffle values greater than ahead of this value
-        auto j = i;
-        for (; j > 0 && temp < array[j-1]; j--) {
-            array[j] = array[j-1];
-        }
+        std::cout << "Split" << std::endl;
+        std::cout << "temp1:" << split1 << std::endl;
+        std::cout << "temp2:" << split2 << std::endl;
 
-        // insert value in correct location
-        array[j] = temp;
+        // merge
+        subfiles = merge(merged, split1, split2);
+
+        std::cout << "Merge" << std::endl;
+        std::cout << merged << std::endl;
+
+    } while (subfiles != 1);
+
+    // copy back into array (only needed for this demo code)
+    auto i = 0;
+    while (!merged.empty()) {
+        array[i++] = merged.front();
+        merged.pop();
     }
 }
 
 int main() {
 
-    for (size_t len = 10; len <= 10000; len *= 10) {
+    for (size_t len = 10; len <= 10; len *= 10) {
         std::cout << "len = " << len << std::endl;
 
         auto nums = new int[len];
 
-        fill_array({nums, len});
-        track_time("bubble sort", bubble_sort, {nums, len});
+//        fill_array({nums, len});
+//        track_time("bubble sort", bubble_sort, {nums, len});
+//
+//        fill_array({nums, len});
+//        track_time("selection sort", selection_sort, {nums, len});
+//
+//        fill_array({nums, len});
+//        track_time("insertion sort", insertion_sort, {nums, len});
 
         fill_array({nums, len});
-        track_time("selection sort", selection_sort, {nums, len});
+        std::cout << join({nums, len}, ',') << std::endl;
+        merge_sort({nums, len});
+        std::cout << join({nums, len}, ',') << std::endl;
 
-        fill_array({nums, len});
-        track_time("insertion sort", insertion_sort, {nums, len});
-
-        delete [] nums;
+        delete[] nums;
     }
 
     return 0;
