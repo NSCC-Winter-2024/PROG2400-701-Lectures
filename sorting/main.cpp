@@ -16,12 +16,14 @@ void track_time(auto desc, void(*f)(std::span<int>), std::span<int> nums) {
     std::cout << std::setw(15) << desc << ": ";
     std::cout << "time = " << span.count() << "s" << std::endl;
 }
+
 void dump_array(std::span<int> array) {
     for (int i : array) {
         std::cout << std::setw(3) << i;
     }
     std::cout << std::endl;
 }
+
 std::string join(const std::span<int> nums, auto ch) {
     return std::accumulate(
         std::next(nums.begin()),
@@ -31,6 +33,7 @@ std::string join(const std::span<int> nums, auto ch) {
             return std::move(s) + ch + std::to_string(n);
         });
 }
+
 void fill_array(std::span<int> nums) {
     std::random_device rnd;
     std::default_random_engine eng(rnd());
@@ -170,6 +173,20 @@ int main() {
 //
 //        fill_array({nums, len});
 //        track_time("insertion sort", insertion_sort, {nums, len});
+//        fill_array({nums, len});
+//        track_time("bubble sort", bubble_sort, {nums, len});
+//
+//        fill_array({nums, len});
+//        track_time("selection sort", selection_sort, {nums, len});
+//
+//        fill_array({nums, len});
+//        track_time("insertion sort", insertion_sort, {nums, len});
+
+//        fill_array({nums, len});
+//        track_time("shell sort", shell_sort, {nums, len});
+
+//        fill_array({nums, len});
+//        track_time("quick sort", quick_sort, {nums, len});
 
         fill_array({nums, len});
         std::cout << join({nums, len}, ',') << std::endl;
